@@ -16,7 +16,7 @@ int rowLength = 10; // set # rows/columns (board is always square)
 int populationSize = 150; // set number of citizens
 int cSize = 12; // citizen render circle radius
 float maxVelocity = 1.5;
-float friction = 0.001;
+float friction = 0.005;
 
 void setup(){
   //size(800, 800);
@@ -34,7 +34,7 @@ void setup(){
   for (int i = 0; i < populationSize; i++){ // make the citizens
     
     population.add(new Citizen(random(width - (cSize + 1)) + cSize + 1, random(height - (cSize + 1)) + cSize + 1, random(0.1), random(0.1), 0.15, 0.15));
-    //move a citizen if it overlaps with another citizen
+    //move a citizen if it overlaps with another citizen (Just once? What if the new placement overlaps with a different agent?)
     for (int j = 0; j < population.size(); j++){
         if (j != i){
           PVector bVect = PVector.sub(population.get(i).position, population.get(j).position);
