@@ -13,7 +13,7 @@ OscP5 osc;
 NetAddress supercollider;
 
 int rowLength = 10; // set # rows/columns (board is always square)
-int populationSize = 200; // set number of citizens
+int populationSize = 150; // set number of citizens
 int cSize = 12; // citizen render circle radius
 float maxVelocity = 1.5;
 float friction = 0.001;
@@ -199,6 +199,7 @@ class Citizen {
   boolean checkCollision(Citizen other){
     PVector bVect = PVector.sub(other.position, position);
     float bVectMag = bVect.mag();
+    float collisionIntensity = 2.0;
     if (bVectMag < cSize){
       // get angle of bVect
       float theta  = bVect.heading();
@@ -238,17 +239,17 @@ class Citizen {
         new PVector(), new PVector()
       };
 
-      // final rotated velocity for b[0]
-      vFinal[0].x = ((m - other.m) * vTemp[0].x + 2 * other.m * vTemp[1].x) / (m + other.m);
+      // final rotated velocity for b[0] // Add a multiplier to determine collision intensity
+      vFinal[0].x = ((m - other.m) * vTemp[0].x + 2 * other.m * vTemp[1].x) / (m + other.m) * collisionIntensity;
       vFinal[0].y = vTemp[0].y;
 
       // final rotated velocity for b[0]
-      vFinal[1].x = ((other.m - m) * vTemp[1].x + 2 * m * vTemp[0].x) / (m + other.m);
+      vFinal[1].x = ((other.m - m) * vTemp[1].x + 2 * m * vTemp[0].x) / (m + other.m) * collisionIntensity;
       vFinal[1].y = vTemp[1].y;
 
       // hack to avoid clumping
-      bTemp[0].x += vFinal[0].x;
-      bTemp[1].x += vFinal[1].x;
+      bTemp[0].x += vFinal[0].x * collisionIntensity/2;
+      bTemp[1].x += vFinal[1].x * collisionIntensity/2;
 
       /* Rotate ball positions and velocities back
        Reverse signs in trig expressions to rotate 
