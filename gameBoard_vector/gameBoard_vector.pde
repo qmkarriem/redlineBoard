@@ -3,7 +3,7 @@ color yellowLine = color(255, 255, 0, 255);
 color greenLine = color(0, 255, 0, 255);
 color[] colors = {redLine, yellowLine, greenLine};
 boolean downFlag = true;
-ArrayList<Neighborhood> playSpace = new ArrayList<Neighborhood>();
+ArrayList<Neighborhood> city = new ArrayList<Neighborhood>();
 ArrayList<Citizen> population = new ArrayList<Citizen>();
 
 int rowLength = 8; // set # rows/columns (board is always square)
@@ -17,14 +17,13 @@ void setup(){
   //fullScreen();
   for (int j = 0; j < rowLength; j++){
     for (int i = 0; i < rowLength; i++){
-      playSpace.add(new Neighborhood());
-      playSpace.get(j*rowLength+i).colorVal = int(random(3));
-      playSpace.get(j*rowLength+i).x = i;
-      playSpace.get(j*rowLength+i).y = j;
+      city.add(new Neighborhood());
+      city.get(j*rowLength+i).colorVal = int(random(3));
+      city.get(j*rowLength+i).x = i;
+      city.get(j*rowLength+i).y = j;
     }
   }
   for (int i = 0; i < populationSize; i++){ // make the citizens
-    
     population.add(new Citizen(random(width - (cSize + 1)) + cSize + 1, random(height - (cSize + 1)) + cSize + 1, random(0.1), random(0.1), 0.15, 0.15));
     //move a citizen if it overlaps with another citizen (Just once? What if the new placement overlaps with a different agent?)
     for (int j = 0; j < population.size(); j++){
@@ -36,9 +35,10 @@ void setup(){
             population.get(i).position.y = random(height - (cSize + 1)) + cSize + 1;
           }
         }
-    } 
+    }
+    population.get(i).evaluateCity();
   }
-  population.get(0).evaluateCity();
+  
 }
 
 void draw(){
@@ -46,9 +46,9 @@ void draw(){
   background(0);
   for (int i = 0; i < sq(rowLength); i++){
     noStroke();
-    fill(colors[int(playSpace.get(i).colorVal)]);
-    rect(playSpace.get(i).x * size, playSpace.get(i).y * size, size, size);
-    playSpace.get(i).displayValue(population.get(0));
+    fill(colors[int(city.get(i).colorVal)]);
+    rect(city.get(i).x * size, city.get(i).y * size, size, size);
+    city.get(i).displayValue(population.get(0));
   }
   for (int i = 0; i < population.size(); i++){ //check each citizen for collisions with other citizens
     noStroke();
@@ -64,6 +64,7 @@ void draw(){
 
 class Neighborhood {
   int colorVal;
+  int size = height/rowLength;
   int x, y; // coordinate address (grid coordinate, not pixel)
   void print(){
     println(x, ", ", y);
@@ -71,7 +72,6 @@ class Neighborhood {
   
   //display a Neighborhood's value from the perspective of a given Citizen
   void displayValue(Citizen agent){
-    int size = height/rowLength;
     fill(0);
     textAlign(CENTER);
     text(agent.neighborhoodValues[x+(rowLength*y)], x*size + size/2, (y+1)*size-size/2);
@@ -86,7 +86,7 @@ class Citizen {
   boolean moveFlag = false;
   int citizenColor = int(random(1));
   float r, m;
-  float[] neighborhoodValues = new float[playSpace.size()];
+  float[] neighborhoodValues = new float[city.size()];
   float currentVal, maxVal;
   Citizen(float x, float y, float xv, float yv, float xa, float ya){
     position = new PVector(x, y);
@@ -100,17 +100,18 @@ class Citizen {
   void evaluateCity(){
     //assign a value based on color code and population
     for (int i = 0; i < sq(rowLength); i++){
-      if (playSpace.get(i).colorVal == 2){
+      if (city.get(i).colorVal == 2){
         neighborhoodValues[i] = 2.0;
       }
-      else if (playSpace.get(i).colorVal == 1){
+      else if (city.get(i).colorVal == 1){
         neighborhoodValues[i] = 0.0;
       }
-      else if (playSpace.get(i).colorVal == 0){
+      else if (city.get(i).colorVal == 0){
         neighborhoodValues[i] = -2.0;
       }
-      
-      ArrayList<Neighborhood> adjacents = getAdjacent(playSpace.get(i).x, playSpace.get(i).y);
+      neighborhoodValues[i] -= (distance(addressX, addressY, city.get(i).x, city.get(i).y)/12);
+
+      ArrayList<Neighborhood> adjacents = getAdjacent(city.get(i).x, city.get(i).y);
       for (int j = 0; j < adjacents.size(); j++){
         if (adjacents.get(j).colorVal == 2){ 
           neighborhoodValues[i] += 0.25;}
@@ -118,39 +119,27 @@ class Citizen {
           neighborhoodValues[i] -= 0.25;
         }
       }
-    }
-    setDestination();
+    } 
   }
   
-  // check to see if Citizen has moved to a new Neighborhood and modify the value of the surrounding Neighborhoods if so
+  // check to see if Citizen has moved to a new Neighborhood 
   void updateCity(){
     getAddress();
     if (lastX != addressX || lastY != addressY){ 
+      evaluateCity();
       lastX = addressX;
       lastY = addressY;
-      for (int j = 0; j < sq(rowLength); j++){
-        if (position.x > playSpace.get(j).x * size && position.x < playSpace.get(j).x * size + size && position.y > playSpace.get(j).y * size && position.y < playSpace.get(j).y * size + size){
-          neighborhoodValues[j] += 0.1; //add value to the occupied Neighborhood
-          ArrayList<Neighborhood> adjacents = getAdjacent(playSpace.get(j).x, playSpace.get(j).y);
-          /*for (int k = 0; k < adjacents.size(); k++){
-            //how to add value to surrounding neighborhoods?
-          }*/
-          println("moved into (" + addressX + ", " + addressY + "), valued at " + neighborhoodValues[j]);
-         }
-         else {
-           neighborhoodValues[j] -= 0.1;
-         }
-      }
      }
+     setDestination();
    }
   
   //get the address of the Neighborhood the Citizen occupies
   void getAddress(){
     for (int i = 0; i < sq(rowLength); i++){
-      if (position.x > playSpace.get(i).x * size && position.x < playSpace.get(i).x * size + size && position.y > playSpace.get(i).y * size && position.y < playSpace.get(i).y * size + size){
-        addressX = playSpace.get(i).x;
-        addressY = playSpace.get(i).y;
-        addressColor = playSpace.get(i).colorVal;
+      if (position.x > city.get(i).x * size && position.x < city.get(i).x * size + size && position.y > city.get(i).y * size && position.y < city.get(i).y * size + size){
+        addressX = city.get(i).x;
+        addressY = city.get(i).y;
+        addressColor = city.get(i).colorVal;
         currentVal = neighborhoodValues[i];
       }
     } 
@@ -158,12 +147,12 @@ class Citizen {
   
   // find the best possibility and set it as destination
   void setDestination(){
-    ArrayList<Neighborhood> moveOptions = playSpace; //set entire board as move option
+    ArrayList<Neighborhood> moveOptions = city; //set entire board as move option
     for (int i = 0; i < moveOptions.size(); i++){ 
        if (maxVal < neighborhoodValues[i]){
          maxVal = neighborhoodValues[i];
          destination = moveOptions.get(i);
-         println("destination set to (" + destination.x + ", " + destination.y + "), valued at " + neighborhoodValues[i]);
+         println("destination set to (" + destination.x + ", " + destination.y + "), valued at " + neighborhoodValues[i] + ", " + distance(addressX, addressY, destination.x, destination.y) + " away");
        }
     }
   }
@@ -276,18 +265,21 @@ void mousePressed(){
   downFlag = true;
   int size = height / rowLength;
   for (int i = 0; i < sq(rowLength); i++){
-    if (mouseX > playSpace.get(i).x * size && mouseX < playSpace.get(i).x * size + size && mouseY > playSpace.get(i).y * size && mouseY < playSpace.get(i).y * size + size){
-      println(playSpace.get(i).x, playSpace.get(i).y);
+    if (mouseX > city.get(i).x * size && mouseX < city.get(i).x * size + size && mouseY > city.get(i).y * size && mouseY < city.get(i).y * size + size){
+      println(city.get(i).x, city.get(i).y);
       if (mouseButton == LEFT) {
-        playSpace.get(i).colorVal = colorShiftDown(playSpace.get(i).colorVal);
+        city.get(i).colorVal = colorShiftDown(city.get(i).colorVal);
       } else if (mouseButton == RIGHT) {
-        playSpace.get(i).colorVal = colorShiftUp(playSpace.get(i).colorVal);
+        city.get(i).colorVal = colorShiftUp(city.get(i).colorVal);
       }
-      //getAdjacent(playSpace.get(i).x, playSpace.get(i).y);
+      //getAdjacent(city.get(i).x, city.get(i).y);
     }
   }
-  population.get(0).maxVal = population.get(0).currentVal;
-  population.get(0).evaluateCity();
+  for (int i = 0; i < population.size(); i++){
+    population.get(i).maxVal = population.get(i).currentVal;
+    population.get(i).evaluateCity();
+    population.get(i).updateCity();
+  }
 }
 
 int colorShiftDown(int currentColor){
@@ -311,16 +303,21 @@ ArrayList<Neighborhood> getAdjacent(int x, int y){
   ArrayList<Neighborhood> adjacents = new ArrayList<Neighborhood>();
   //println("this address: ", x, ", ", y);
   for (int i = 0; i < sq(rowLength); i++){
-    if ((playSpace.get(i).x <= x + 1 && playSpace.get(i).x >= x - 1 && playSpace.get(i).y <= y + 1 && playSpace.get(i).y >= y - 1)){ 
-      adjacents.add(playSpace.get(i));
+    if ((city.get(i).x <= x + 1 && city.get(i).x >= x - 1 && city.get(i).y <= y + 1 && city.get(i).y >= y - 1)){ 
+      adjacents.add(city.get(i));
     }
     
     //remove the space under consideration from the list of adjacents
-    if (playSpace.get(i).x == x && playSpace.get(i).y == y){ 
-      adjacents.remove(playSpace.get(i));
+    if (city.get(i).x == x && city.get(i).y == y){ 
+      adjacents.remove(city.get(i));
     }
   }
   return adjacents;
+}
+
+//return the distance between two x/y coordinate pairs
+float distance(int x1, int y1, int x2, int y2){
+  return sqrt(sq(x2 - x1) + sq(y2 - y1));
 }
 
 //enforce friction on a Citizen and limit its total velocity
