@@ -6,7 +6,7 @@ boolean downFlag = true;
 ArrayList<Neighborhood> playSpace = new ArrayList<Neighborhood>();
 ArrayList<Citizen> population = new ArrayList<Citizen>();
 
-int rowLength = 6; // set # rows/columns (board is always square)
+int rowLength = 8; // set # rows/columns (board is always square)
 int populationSize = 1; // set number of citizens
 int cSize = 12; // citizen render circle radius
 float maxVelocity = 1.5;
@@ -41,7 +41,6 @@ void setup(){
 }
 
 void draw(){
-  population.get(0).evaluateCity();
   int size = height / rowLength;
   background(0);
   for (int i = 0; i < sq(rowLength); i++){
@@ -58,6 +57,7 @@ void draw(){
     ellipse(population.get(i).position.x, population.get(i).position.y, cSize, cSize);
     population.get(i).move();
   }
+  population.get(0).evaluateCity();
 }
 
 class Neighborhood {
@@ -105,30 +105,6 @@ class Citizen {
       else if (playSpace.get(i).colorVal == 0){
         neighborhoodValues[i] = -2.0;
       }
-      /* switch (playSpace.get(i).population){
-        case 0:
-            neighborhoodValues[i] += 0.2;
-        case 1: 
-            neighborhoodValues[i] += 0.3;
-        case 2:
-            neighborhoodValues[i] += 0.3;
-        case 3: 
-            neighborhoodValues[i] += 0.3;
-        case 4:
-            neighborhoodValues[i] += 0.2;
-        case 5: 
-            neighborhoodValues[i] += 0;
-        case 6:
-            neighborhoodValues[i] -= 0.2;
-        case 7: 
-            neighborhoodValues[i] -= 0.4;
-        case 8:
-            neighborhoodValues[i] -= 0.8;
-        case 9: 
-            neighborhoodValues[i] -= 1.8;
-        default:
-            neighborhoodValues[i] -= 4.0;
-      } */
       
       ArrayList<Neighborhood> adjacents = getAdjacent(playSpace.get(i).x, playSpace.get(i).y);
       for (int j = 0; j < adjacents.size(); j++){
@@ -314,7 +290,6 @@ class Citizen {
 }
 
 void mousePressed(){
-  population.get(0).evaluateCity();
   downFlag = true;
   int size = height / rowLength;
   for (int i = 0; i < sq(rowLength); i++){
@@ -328,6 +303,8 @@ void mousePressed(){
       //getAdjacent(playSpace.get(i).x, playSpace.get(i).y);
     }
   }
+  population.get(0).evaluateCity();
+  population.get(0).maxVal = population.get(0).currentVal;
 }
 
 int colorShiftDown(int currentColor){
@@ -361,4 +338,3 @@ ArrayList<Neighborhood> getAdjacent(int x, int y){
   }
   return adjacents;
 }
-  
