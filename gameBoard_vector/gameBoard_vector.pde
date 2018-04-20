@@ -6,14 +6,14 @@ boolean downFlag = true;
 ArrayList<Neighborhood> city = new ArrayList<Neighborhood>();
 ArrayList<Citizen> population = new ArrayList<Citizen>();
 
-int rowLength = 8; // set # rows/columns (board is always square)
-int populationSize = 1; // set number of citizens
+int rowLength = 6; // set # rows/columns (board is always square)
+int populationSize = 25; // set number of citizens
 int cSize = 12; // citizen render circle radius
-float maxVelocity = 1.5;
-float friction = 0.05;
+float maxVelocity = 1.0;
+float friction = 0.1;
 
 void setup(){
-  size(800, 800);
+  size(600, 600);
   //fullScreen();
   for (int j = 0; j < rowLength; j++){
     for (int i = 0; i < rowLength; i++){
@@ -48,22 +48,35 @@ void draw(){
     noStroke();
     fill(colors[int(city.get(i).colorVal)]);
     rect(city.get(i).x * size, city.get(i).y * size, size, size);
-    city.get(i).displayValue(population.get(0));
   }
-  for (int i = 0; i < population.size(); i++){ //check each citizen for collisions with other citizens
+  for (int i = 0; i < population.size(); i++){ 
     noStroke();
     if (population.get(i).citizenColor == 0){
       fill(#000000);
     } else {fill(#ffffff);}
     ellipse(population.get(i).position.x, population.get(i).position.y, cSize, cSize);
+    
+    //check each citizen for collisions with other citizens
+    for (int j = i+1; j < population.size(); j++){
+      population.get(i).checkCollision(population.get(j));
+    }
+    population.get(i).maxVal = population.get(i).currentVal;
+    population.get(i).evaluateCity();
     population.get(i).updateCity();
     speedLimits(population.get(i));
     population.get(i).move();
+  }
+  /*for (int i = 0; i < sq(rowLength); i++){
+    city.get(i).displayValue(population.get(0));
+  }*/
+  for (int i = 0; i < sq(rowLength); i++){
+    city.get(i).popCount = 0;
   }
 }
 
 class Neighborhood {
   int colorVal;
+  int popCount;
   int size = height/rowLength;
   int x, y; // coordinate address (grid coordinate, not pixel)
   void print(){
@@ -75,6 +88,7 @@ class Neighborhood {
     fill(0);
     textAlign(CENTER);
     text(agent.neighborhoodValues[x+(rowLength*y)], x*size + size/2, (y+1)*size-size/2);
+    text(popCount, x*size + size/2, ((y+1)*size-size/2) + 20);
   }
 }
 
@@ -98,7 +112,7 @@ class Citizen {
   
   //set values for every Neighborhood from the perspective of this Citizen
   void evaluateCity(){
-    //assign a value based on color code and population
+    //assign a value based on color code
     for (int i = 0; i < sq(rowLength); i++){
       if (city.get(i).colorVal == 2){
         neighborhoodValues[i] = 2.0;
@@ -109,8 +123,14 @@ class Citizen {
       else if (city.get(i).colorVal == 0){
         neighborhoodValues[i] = -2.0;
       }
-      neighborhoodValues[i] -= (distance(addressX, addressY, city.get(i).x, city.get(i).y)/12);
-
+      
+      //adjust the value of a Neighborhood based on population
+      neighborhoodValues[i] -= float(city.get(i).popCount);
+      
+      //reduce the value of distant neighborhoods
+      neighborhoodValues[i] -= (distance(addressX, addressY, city.get(i).x, city.get(i).y) / 12); 
+      
+      //adjust the value of neighborhoods based on color code of surroundings
       ArrayList<Neighborhood> adjacents = getAdjacent(city.get(i).x, city.get(i).y);
       for (int j = 0; j < adjacents.size(); j++){
         if (adjacents.get(j).colorVal == 2){ 
@@ -140,6 +160,8 @@ class Citizen {
         addressX = city.get(i).x;
         addressY = city.get(i).y;
         addressColor = city.get(i).colorVal;
+        city.get(i).popCount += 1;
+        //println(city.get(i).popCount);
         currentVal = neighborhoodValues[i];
       }
     } 
@@ -152,7 +174,7 @@ class Citizen {
        if (maxVal < neighborhoodValues[i]){
          maxVal = neighborhoodValues[i];
          destination = moveOptions.get(i);
-         println("destination set to (" + destination.x + ", " + destination.y + "), valued at " + neighborhoodValues[i] + ", " + distance(addressX, addressY, destination.x, destination.y) + " away");
+         //println("destination set to (" + destination.x + ", " + destination.y + "), valued at " + neighborhoodValues[i] + ", " + distance(addressX, addressY, destination.x, destination.y) + " away");
        }
     }
   }
@@ -177,7 +199,7 @@ class Citizen {
   boolean checkCollision(Citizen other){
     PVector bVect = PVector.sub(other.position, position);
     float bVectMag = bVect.mag();
-    float collisionIntensity = 2.0;
+    float collisionIntensity = 2.5;
     if (bVectMag < cSize){
       // get angle of bVect
       float theta  = bVect.heading();
@@ -226,8 +248,8 @@ class Citizen {
       vFinal[1].y = vTemp[1].y;
 
       // hack to avoid clumping
-      bTemp[0].x += vFinal[0].x * collisionIntensity/2;
-      bTemp[1].x += vFinal[1].x * collisionIntensity/2;
+      bTemp[0].x += vFinal[0].x * collisionIntensity;
+      bTemp[1].x += vFinal[1].x * collisionIntensity;
 
       /* Rotate ball positions and velocities back
        Reverse signs in trig expressions to rotate 
@@ -274,11 +296,6 @@ void mousePressed(){
       }
       //getAdjacent(city.get(i).x, city.get(i).y);
     }
-  }
-  for (int i = 0; i < population.size(); i++){
-    population.get(i).maxVal = population.get(i).currentVal;
-    population.get(i).evaluateCity();
-    population.get(i).updateCity();
   }
 }
 
