@@ -7,8 +7,8 @@ ArrayList<Neighborhood> city = new ArrayList<Neighborhood>();
 ArrayList<Citizen> population = new ArrayList<Citizen>();
 
 int rowLength = 6; // set # rows/columns (board is always square)
-int populationSize = 45; // set number of citizens
-int cSize = 12; // citizen render circle radius
+int populationSize = 56; // set number of citizens
+int cSize = 10; // citizen render circle radius
 float maxVelocity = 1.0;
 float friction = 0.1;
 
@@ -98,6 +98,8 @@ class Citizen {
   int size = height/rowLength;
   boolean moveFlag = false;
   int citizenColor = int(random(1));
+  float crowdingTolerance = 3.0;  //higher values make Citizens more willing to settle in populated areas
+  float distanceTolerance = 8.0; //higher values make Citizens more willing to travel
   float r, m;
   float[] neighborhoodValues = new float[city.size()];
   float currentVal, maxVal;
@@ -111,31 +113,32 @@ class Citizen {
   
   //set values for every Neighborhood from the perspective of this Citizen
   void evaluateCity(){
+    float holcDifferential = 1.0;  //higher values make Citizens more sensitive to color value
     //assign a value based on color code
     for (int i = 0; i < sq(rowLength); i++){
       if (city.get(i).colorVal == 2){
-        neighborhoodValues[i] = 1.25;
+        neighborhoodValues[i] = holcDifferential;
       }
       else if (city.get(i).colorVal == 1){
         neighborhoodValues[i] = 0.0;
       }
       else if (city.get(i).colorVal == 0){
-        neighborhoodValues[i] = -1.25;
+        neighborhoodValues[i] = -holcDifferential;
       }
       
       //adjust the value of a Neighborhood based on population
-      neighborhoodValues[i] -= float(city.get(i).popCount)/2.0;
+      neighborhoodValues[i] -= float(city.get(i).popCount)/crowdingTolerance;
       
       //reduce the value of distant neighborhoods
-      neighborhoodValues[i] -= (distance(addressX, addressY, city.get(i).x, city.get(i).y) / 12); 
+      neighborhoodValues[i] -= (distance(addressX, addressY, city.get(i).x, city.get(i).y) / distanceTolerance); 
       
-      //adjust the value of neighborhoods based on color code of surroundings
+      //adjust the value of neighborhoods based on average value of surroundings
       ArrayList<Neighborhood> adjacents = getAdjacent(city.get(i).x, city.get(i).y);
       for (int j = 0; j < adjacents.size(); j++){
         if (adjacents.get(j).colorVal == 2){ 
-          neighborhoodValues[i] += 0.15;}
+          neighborhoodValues[i] += (holcDifferential/10);}
         else if (adjacents.get(j).colorVal == 0){
-          neighborhoodValues[i] -= 0.15;
+          neighborhoodValues[i] -= (holcDifferential/10);
         }
       }
     } 
@@ -182,23 +185,25 @@ class Citizen {
   void move(){
     
     //designate alternate "spots" to settle inside an occupied Neighborhood
-    float spot = 0.0;
-    if (destination.popCount == 0){spot = size/2;}
-    if (destination.popCount == 1){spot = size/2;}
-    if (destination.popCount == 2){spot = size/4;}
-    if (destination.popCount == 3){spot = size*3/4;}
-    if (destination.popCount > 3){spot = size/2;}
+    float spotX = 0.0;
+    float spotY = 0.0;
+    if (destination.popCount == 0){spotX = size/2; spotY = size/2;}
+    if (destination.popCount == 1){spotX = size/2; spotY = size/2;}
+    if (destination.popCount == 2){spotX = size/4; spotY = size/4;}
+    if (destination.popCount == 3){spotX = size*3/4; spotY = size*3/4;}
+    if (destination.popCount == 4){spotX = size/4; spotY = size*3/4;}
+    if (destination.popCount == 5){spotX = size*3/4; spotY = size/4;}
     
-    if (position.x < (destination.x * size) + spot){ 
+    if (position.x < (destination.x * size) + spotX){ 
       velocity.x += acceleration.x;
     }
-    if (position.x > (destination.x * size) + spot){
+    if (position.x > (destination.x * size) + spotX){
       velocity.x -= acceleration.x;
     }
-    if (position.y < ((destination.y) * size) + spot){
+    if (position.y < ((destination.y) * size) + spotY){
       velocity.y += acceleration.y;
     }
-    if (position.y > ((destination.y) * size) + spot){
+    if (position.y > ((destination.y) * size) + spotY){
       velocity.y -= acceleration.y;
     }   
     position.add(velocity);
@@ -274,18 +279,18 @@ class Citizen {
 
       // update balls to screen position
       float swerve = random(-10, 10);
-      other.position.x = position.x + bFinal[1].x + swerve/2;
-      other.position.y = position.y + bFinal[1].y + swerve/2;
-      position.x -= random(10);
-      position.y -= random(10);
+      other.position.x = position.x + bFinal[1].x + swerve/4;
+      other.position.y = position.y + bFinal[1].y + swerve/4;
+      position.x -= random(10)/4;
+      position.y -= random(10)/4;
 
       position.add(bFinal[0]);
 
       // update velocities
-      velocity.x = cosine * vFinal[0].x - sine * vFinal[0].y + swerve;
-      velocity.y = cosine * vFinal[0].y + sine * vFinal[0].x + swerve;
-      other.velocity.x = cosine * vFinal[1].x - sine * vFinal[1].y - swerve;
-      other.velocity.y = cosine * vFinal[1].y + sine * vFinal[1].x - swerve;
+      velocity.x = cosine * vFinal[0].x - sine * vFinal[0].y + swerve/2;
+      velocity.y = cosine * vFinal[0].y + sine * vFinal[0].x + swerve/2;
+      other.velocity.x = cosine * vFinal[1].x - sine * vFinal[1].y - swerve/2;
+      other.velocity.y = cosine * vFinal[1].y + sine * vFinal[1].x - swerve/2;
       return true;
     } else {
       return false;
