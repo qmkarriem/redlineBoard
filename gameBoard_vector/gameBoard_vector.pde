@@ -7,7 +7,7 @@ ArrayList<Neighborhood> city = new ArrayList<Neighborhood>();
 ArrayList<Citizen> population = new ArrayList<Citizen>();
 
 int rowLength = 6; // set # rows/columns (board is always square)
-int populationSize = 25; // set number of citizens
+int populationSize = 45; // set number of citizens
 int cSize = 12; // citizen render circle radius
 float maxVelocity = 1.0;
 float friction = 0.1;
@@ -37,8 +37,7 @@ void setup(){
         }
     }
     population.get(i).evaluateCity();
-  }
-  
+  } 
 }
 
 void draw(){
@@ -115,17 +114,17 @@ class Citizen {
     //assign a value based on color code
     for (int i = 0; i < sq(rowLength); i++){
       if (city.get(i).colorVal == 2){
-        neighborhoodValues[i] = 2.0;
+        neighborhoodValues[i] = 1.25;
       }
       else if (city.get(i).colorVal == 1){
         neighborhoodValues[i] = 0.0;
       }
       else if (city.get(i).colorVal == 0){
-        neighborhoodValues[i] = -2.0;
+        neighborhoodValues[i] = -1.25;
       }
       
       //adjust the value of a Neighborhood based on population
-      neighborhoodValues[i] -= float(city.get(i).popCount);
+      neighborhoodValues[i] -= float(city.get(i).popCount)/2.0;
       
       //reduce the value of distant neighborhoods
       neighborhoodValues[i] -= (distance(addressX, addressY, city.get(i).x, city.get(i).y) / 12); 
@@ -134,9 +133,9 @@ class Citizen {
       ArrayList<Neighborhood> adjacents = getAdjacent(city.get(i).x, city.get(i).y);
       for (int j = 0; j < adjacents.size(); j++){
         if (adjacents.get(j).colorVal == 2){ 
-          neighborhoodValues[i] += 0.25;}
+          neighborhoodValues[i] += 0.15;}
         else if (adjacents.get(j).colorVal == 0){
-          neighborhoodValues[i] -= 0.25;
+          neighborhoodValues[i] -= 0.15;
         }
       }
     } 
@@ -181,16 +180,25 @@ class Citizen {
   
   //accelerate toward a "destination" Neighborhood
   void move(){
-    if (position.x < (destination.x * size) + size/2){ 
+    
+    //designate alternate "spots" to settle inside an occupied Neighborhood
+    float spot = 0.0;
+    if (destination.popCount == 0){spot = size/2;}
+    if (destination.popCount == 1){spot = size/2;}
+    if (destination.popCount == 2){spot = size/4;}
+    if (destination.popCount == 3){spot = size*3/4;}
+    if (destination.popCount > 3){spot = size/2;}
+    
+    if (position.x < (destination.x * size) + spot){ 
       velocity.x += acceleration.x;
     }
-    if (position.x > (destination.x * size) + size/2){
+    if (position.x > (destination.x * size) + spot){
       velocity.x -= acceleration.x;
     }
-    if (position.y < ((destination.y) * size) + size/2){
+    if (position.y < ((destination.y) * size) + spot){
       velocity.y += acceleration.y;
     }
-    if (position.y > ((destination.y) * size) + size/2){
+    if (position.y > ((destination.y) * size) + spot){
       velocity.y -= acceleration.y;
     }   
     position.add(velocity);
@@ -199,7 +207,7 @@ class Citizen {
   boolean checkCollision(Citizen other){
     PVector bVect = PVector.sub(other.position, position);
     float bVectMag = bVect.mag();
-    float collisionIntensity = 2.5;
+    float collisionIntensity = 3.5;
     if (bVectMag < cSize){
       // get angle of bVect
       float theta  = bVect.heading();
@@ -265,16 +273,19 @@ class Citizen {
       bFinal[1].y = cosine * bTemp[1].y + sine * bTemp[1].x;
 
       // update balls to screen position
-      other.position.x = position.x + bFinal[1].x;
-      other.position.y = position.y + bFinal[1].y;
+      float swerve = random(-10, 10);
+      other.position.x = position.x + bFinal[1].x + swerve/2;
+      other.position.y = position.y + bFinal[1].y + swerve/2;
+      position.x -= random(10);
+      position.y -= random(10);
 
       position.add(bFinal[0]);
 
       // update velocities
-      velocity.x = cosine * vFinal[0].x - sine * vFinal[0].y;
-      velocity.y = cosine * vFinal[0].y + sine * vFinal[0].x;
-      other.velocity.x = cosine * vFinal[1].x - sine * vFinal[1].y;
-      other.velocity.y = cosine * vFinal[1].y + sine * vFinal[1].x;
+      velocity.x = cosine * vFinal[0].x - sine * vFinal[0].y + swerve;
+      velocity.y = cosine * vFinal[0].y + sine * vFinal[0].x + swerve;
+      other.velocity.x = cosine * vFinal[1].x - sine * vFinal[1].y - swerve;
+      other.velocity.y = cosine * vFinal[1].y + sine * vFinal[1].x - swerve;
       return true;
     } else {
       return false;
