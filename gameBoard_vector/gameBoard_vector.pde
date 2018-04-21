@@ -57,13 +57,13 @@ void draw(){
     
     //check each citizen for collisions with other citizens
     for (int j = i+1; j < population.size(); j++){
-      population.get(i).checkCollision(population.get(j));
+      checkCollision(population.get(i), population.get(j));
     }
     population.get(i).maxVal = population.get(i).currentVal;
     population.get(i).evaluateCity();
     population.get(i).updateCity();
     speedLimits(population.get(i));
-    population.get(i).move();
+    move(population.get(i));
   }
   for (int i = 0; i < sq(rowLength); i++){
     //city.get(i).displayValue(population.get(0));
@@ -72,6 +72,7 @@ void draw(){
     city.get(i).popCount = 0;
   }
 }
+
 //return the distance between two x/y coordinate pairs
 float distance(int x1, int y1, int x2, int y2){
   return sqrt(sq(x2 - x1) + sq(y2 - y1));
