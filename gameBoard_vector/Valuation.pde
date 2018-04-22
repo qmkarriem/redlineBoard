@@ -25,6 +25,22 @@ float calculateValue(Citizen subjectAgent, Neighborhood objectZone){
     }
     value -= float(adjacents.get(i).popCount)/(subjectAgent.crowdingTolerance * 5.0);
   }
+  
+  //adjust the value of Neighborhood based on subjectAgent's affects toward its Citizens
+  // 1. find the appropriate affectTable for subjectAgent
+  for (int i = 0; i < affectTable.size(); i++){ 
+    if (population.get(i) == subjectAgent){
+      for (int j = 0; j < objectZone.census.size(); j++){
+        // 4. find the affect value that matches each of those Citizens
+        for (int k = 0; k < affectTable.get(i).size(); k++){
+          // 5. sum or average those affects and add to total valuation
+          if (population.get(k) == objectZone.census.get(j)){
+            value += affectTable.get(i).get(k);
+          }
+        }
+      }
+    }
+  }       
   return value;
 }
 

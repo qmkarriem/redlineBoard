@@ -38,15 +38,30 @@ class Citizen {
      setDestination();
    }
   
-  //get the address of the Neighborhood the Citizen occupies
+  //get the address of the Neighborhood the Citizen occupies, update Neighborhood census with th
   void getAddress(){
     for (int i = 0; i < sq(rowLength); i++){
       if (position.x > city.get(i).x * size && position.x < city.get(i).x * size + size && position.y > city.get(i).y * size && position.y < city.get(i).y * size + size){
-        addressX = city.get(i).x;
-        addressY = city.get(i).y;
-        addressColor = city.get(i).colorVal;
+        Neighborhood myNeighborhood = city.get(i);
+        addressX = myNeighborhood.x;
+        addressY = myNeighborhood.y;
+        addressColor = myNeighborhood.colorVal;
         city.get(i).popCount += 1;
-        //println(city.get(i).popCount);
+        
+        // clear all Neighborhoods censuses of this Citizen
+        for (int j = 0; j < city.size(); j++){ 
+          for (int k = 0; k < city.get(j).census.size(); k++){
+            if (city.get(j).census.get(k) == this){
+              city.get(j).census.remove(k);
+            }
+          }
+        }
+        
+        // add this Citizen to appropriate Neighborhood.census
+        myNeighborhood.census.add(this);
+        
+
+        //println(city.get(i).census.size());
         currentVal = neighborhoodValues[i];
       }
     } 

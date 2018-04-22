@@ -4,7 +4,7 @@ void mousePressed(){
   int size = height / rowLength;
   for (int i = 0; i < sq(rowLength); i++){
     if (mouseX > city.get(i).x * size && mouseX < city.get(i).x * size + size && mouseY > city.get(i).y * size && mouseY < city.get(i).y * size + size){
-      println(city.get(i).x, city.get(i).y);
+      println(city.get(i).x, city.get(i).y, city.get(i).census.size(), city.get(i).census);
       if (mouseButton == LEFT) {
         city.get(i).colorVal = colorShiftDown(city.get(i).colorVal);
       } else if (mouseButton == RIGHT) {

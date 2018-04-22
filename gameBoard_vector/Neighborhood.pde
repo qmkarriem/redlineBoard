@@ -1,6 +1,7 @@
 class Neighborhood {
   int colorVal;
   int popCount;
+  ArrayList<Citizen> census = new ArrayList<Citizen>(); //maintain a list of the Citizens in a Neighborhood
   int size = height/rowLength;
   int x, y; // coordinate address (grid coordinate, not pixel)
   void print(){
